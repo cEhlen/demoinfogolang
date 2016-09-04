@@ -1,0 +1,2 @@
+# demoinfogolang
+CSGO Demo Parser
