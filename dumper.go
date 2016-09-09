@@ -31,3 +31,33 @@ func (d *Dumper) PrintHeader() {
 	fmt.Println("Playback frames: ", d.demoFile.DemoHeader.playbackFrames)
 	fmt.Println("Signon length: ", d.demoFile.DemoHeader.signonLength)
 }
+
+func (d *Dumper) Dump() {
+	stop := false
+
+	for !stop {
+		fmt.Println("## READ LOOP ##")
+		cmd, tick, player := d.demoFile.ReadCmdHeader()
+		fmt.Printf("CMD: %v  |  TICK: %v  | PLAYER: %v\n", cmd, tick, player)
+		switch cmd {
+		case DEM_STOP:
+			stop = true
+		case DEM_CONSOLECMD:
+			// read raw data
+			fmt.Println("DEM_CONSOLECMD")
+		case DEM_DATATABLES:
+			// read some data
+			fmt.Println("DEM_DATATABLES")
+		case DEM_STRINGTABLES:
+			// read raw data
+			// dump string tables
+			fmt.Println("DEM_STRINGTABLES")
+		case DEM_USERCMD:
+			// read user command
+			fmt.Println("DEM_USERCMD")
+		case DEM_SIGNON, DEM_PACKET, DEM_SYNCTICK:
+			// handle packet
+			fmt.Println("DEM_PACKET")
+		}
+	}
+}

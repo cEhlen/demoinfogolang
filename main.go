@@ -11,4 +11,5 @@ func main() {
 	var demo Dumper
 	demo.Open(*filename)
 	demo.PrintHeader()
+	demo.Dump()
 }
