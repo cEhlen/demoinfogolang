@@ -1,4 +1,4 @@
-package main
+package demo
 
 import (
 	"bufio"
@@ -15,6 +15,9 @@ const (
 	// Static info
 	MAGIC_NUMBER           string = "HL2DEMO"
 	VALID_PROTOCOL_VERSION int32  = 4
+
+	// Byte Sizes
+	INT32_SIZE = 4
 )
 
 const (
@@ -159,10 +162,31 @@ func (df *DemoFile) Reset() {
 	df.FileBuffer = make([]byte, 1)
 }
 
-func (df *DemoFile) readRaw(numBytes int) []byte {
-	slice := df.FileBuffer[df.bufferPos:(df.bufferPos + numBytes)]
-	df.bufferPos += numBytes
+func (df *DemoFile) readRaw(numBytes int32) []byte {
+	slice := df.FileBuffer[df.bufferPos:(df.bufferPos + int(numBytes))]
+	df.bufferPos += int(numBytes)
 	return slice
+}
+
+func (df *DemoFile) ReadRawData(length int32) ([]byte, error) {
+	if len(df.FileBuffer) == 0 {
+		return nil, nil
+	}
+
+	blockSize, err := util.ByteSliceToInt32(df.readRaw(INT32_SIZE))
+	if err != nil {
+		return nil, err
+	}
+
+	if length != 0 && length < blockSize {
+		return nil, errors.New("Buffer Overflow")
+	}
+
+	if length != 0 {
+		buffer := df.readRaw(blockSize)
+		return buffer, nil
+	}
+	return nil, nil
 }
 
 func (df *DemoFile) ReadCmdHeader() (uint8, int32, uint8) {
@@ -189,4 +213,44 @@ func (df *DemoFile) ReadCmdHeader() (uint8, int32, uint8) {
 	}
 
 	return cmd, tick, playerSlot
+}
+
+func (df *DemoFile) ReadUserCmd(size int32) ([]byte, int32, error) {
+	if len(df.FileBuffer) == 0 {
+		return nil, 0, nil
+	}
+
+	outgoingSeq, err := util.ByteSliceToInt32(df.readRaw(4))
+	if err != nil {
+		return nil, 0, err
+	}
+	data, err := df.ReadRawData(size)
+	return data, outgoingSeq, err
+}
+
+func (df *DemoFile) ReadCmdInfo() *demoinfo {
+	if len(df.FileBuffer) == 0 {
+		return nil
+	}
+	var demInfo demoinfo
+	size := unsafe.Sizeof(demInfo)
+	data := df.readRaw(int32(size))
+	dem := ((*demoinfo)(unsafe.Pointer(&data[0])))
+	return dem
+}
+
+func (df *DemoFile) ReadSequenceInfo() (int32, int32, error) {
+	if len(df.FileBuffer) == 0 {
+		return 0, 0, nil
+	}
+
+	seqNrIn, err := util.ByteSliceToInt32(df.readRaw(4))
+	if err != nil {
+		return 0, 0, err
+	}
+	seqNrOut, err := util.ByteSliceToInt32(df.readRaw(4))
+	if err != nil {
+		return 0, 0, err
+	}
+	return seqNrIn, seqNrOut, nil
 }

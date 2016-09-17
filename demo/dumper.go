@@ -1,4 +1,4 @@
-package main
+package demo
 
 import (
 	"fmt"
@@ -40,10 +40,13 @@ func (d *Dumper) Dump() {
 		cmd, tick, player := d.demoFile.ReadCmdHeader()
 		fmt.Printf("CMD: %v  |  TICK: %v  | PLAYER: %v\n", cmd, tick, player)
 		switch cmd {
+		case DEM_SYNCTICK:
+			break
 		case DEM_STOP:
 			stop = true
 		case DEM_CONSOLECMD:
 			// read raw data
+			d.demoFile.ReadRawData(0)
 			fmt.Println("DEM_CONSOLECMD")
 		case DEM_DATATABLES:
 			// read some data
@@ -54,10 +57,15 @@ func (d *Dumper) Dump() {
 			fmt.Println("DEM_STRINGTABLES")
 		case DEM_USERCMD:
 			// read user command
+			d.demoFile.ReadUserCmd(0)
 			fmt.Println("DEM_USERCMD")
-		case DEM_SIGNON, DEM_PACKET, DEM_SYNCTICK:
+		case DEM_SIGNON, DEM_PACKET:
 			// handle packet
 			fmt.Println("DEM_PACKET")
 		}
 	}
+}
+
+func (d *Dumper) HandleDemoPacket() {
+	info := d.demoFile.ReadCmdInfo()
 }
